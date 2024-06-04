@@ -1,0 +1,50 @@
+
+.text {
+    -fx-font-size: 16px;
+    -fx-fill: #FFFFFF;
+}
+
+.button {
+    -fx-border-color: black;
+    -fx-background-color: #000000;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-size: 8px;
+}
+
+.button:hover {
+    -fx-border-color: goldenrod;
+}
+
+/* Styl dla samej tabeli */
+.table-view .text{
+    -fx-color: #000000; /* Ustaw tło tabeli */
+    -fx-background-color: #000000; /* Ustaw tło nagłówków kolumn */
+        -fx-fill: #000000;
+}
+
+/* Styl dla nagłówków kolumn */
+.table-view .column-header-background {
+    -fx-background-color: #000000; /* Ustaw tło nagłówków kolumn */
+}
+/* Styl dla przycisków "Assign" */
+.table-view .button .text{
+ -fx-font-size: 12px;
+ -fx-fill: #FFFFFF;
+}
+
+
+
+/* Styl dla przycisków "Assign" po najechaniu myszą */
+.table-view .button:hover {
+    -fx-background-color: #0056b3; /* Zmiana koloru tła po najechaniu myszą */
+}
+
+/* Styl dla tekstu w komórkach */
+.table-view .table-cell {
+    -fx-text-fill: #000000; /* Ustaw kolor tekstu */
+}
+
+.image-view {
+    -fx-fit-width: 50px;
+    -fx-preserve-ratio: true;
+}

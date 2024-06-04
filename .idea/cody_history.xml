@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChatHistory">
+    <accountData>
+      <list>
+        <AccountData>
+          <accountId value="VXNlcjo0Mzc5ODE=" />
+          <chats>
+            <list>
+              <chat>
+                <internalId value="64936557-fb03-43eb-935b-30bbece96815" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+                <messages>
+                  <list>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="dlaczego przycisk create room nie działa prawidłowo" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="Bez pełnego kontekstu kodu trudno jest precyzyjnie zidentyfikować przyczynę problemu z przyciskiem &quot;Create Room&quot;. Jednak na podstawie udostępnionych fragmentów kodu mogę zasugerować kilka możliwych przyczyn:&#10;&#10;1. **Brak implementacji obsługi zdarzenia dla przycisku &quot;Create Room&quot;**: W udostępnionym kodzie nie ma implementacji obsługi zdarzenia dla przycisku `createRoomButton`. Aby przycisk działał prawidłowo, należy dodać kod, który będzie wykonywany po jego naciśnięciu.&#10;&#10;2. **Brak połączenia z serwerem**: Kod klienta zakłada, że istnieje połączenie z serwerem. Jeśli połączenie nie zostało nawiązane, przycisk &quot;Create Room&quot; nie będzie działał prawidłowo, ponieważ nie będzie możliwości wysłania żądania utworzenia pokoju do serwera.&#10;&#10;3. **Nieprawidłowa implementacja po stronie serwera**: Chociaż kod serwera zawiera metodę `createRoom()`, nie ma informacji, jak jest ona wywoływana i jak serwer obsługuje żądania utworzenia nowego pokoju od klientów.&#10;&#10;Aby rozwiązać problem, należy:&#10;&#10;1. Upewnić się, że po stronie klienta istnieje kod obsługujący zdarzenie naciśnięcia przycisku `createRoomButton`, który będzie wysyłał żądanie utworzenia nowego pokoju do serwera.&#10;&#10;2. Sprawdzić, czy klient nawiązuje prawidłowe połączenie z serwerem przed próbą utworzenia nowego pokoju.&#10;&#10;3. Zweryfikować implementację po stronie serwera, aby upewnić się, że prawidłowo odbiera i obsługuje żądania utworzenia nowego pokoju od klientów.&#10;&#10;4. Dodać kod debugowania lub logowania, aby śledzić przepływ wykonania i komunikację między klientem a serwerem podczas próby utworzenia nowego pokoju.&#10;&#10;Bez pełnego kodu aplikacji klienta i serwera trudno jest dokładnie zidentyfikować przyczynę problemu. Jednak powyższe sugestie powinny pomóc w znalezieniu i rozwiązaniu problemu." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="przepraszam myslalem ze masz dostep do mojego kodu,&#10;DiceGameServer.java:&#10;package com.example.demo;&#10;&#10;import java.io.*;&#10;import java.net.*;&#10;import java.util.*;&#10;&#10;public class DiceGameServer {&#10;    private static final int PORT = 12345;&#10;    private static final Map&amp;lt;Integer, Room&amp;gt; rooms = new HashMap&amp;lt;&amp;gt;();&#10;    private static final List&amp;lt;ClientHandler&amp;gt; clients = new ArrayList&amp;lt;&amp;gt;();&#10;    private static int roomIdCounter = 1;&#10;&#10;    public static void main(String[] args) {&#10;        try (ServerSocket serverSocket = new ServerSocket(PORT)) {&#10;            System.out.println(&amp;quot;Server started on port &amp;quot; + PORT);&#10;&#10;            while (true) {&#10;                Socket clientSocket = serverSocket.accept();&#10;                ClientHandler clientHandler = new ClientHandler(clientSocket);&#10;                synchronized (clients) {&#10;                    clients.add(clientHandler);&#10;                }&#10;                clientHandler.start();&#10;            }&#10;        } catch (IOException e) {&#10;            e.printStackTrace();&#10;        }&#10;    }&#10;&#10;    private static synchronized int createRoom() {&#10;        Room room = new Room(roomIdCounter);&#10;        rooms.put(roomIdCounter, room);&#10;        broadcastToAll(&amp;quot;New room created with ID: &amp;quot; + roomIdCounter);&#10;        return roomIdCounter++;&#10;    }&#10;&#10;    private static void broadcastToAll(String message) {&#10;        synchronized (clients) {&#10;            for (ClientHandler client : clients) {&#10;                client.sendMessage(message);&#10;            }&#10;        }&#10;    }&#10;&#10;    private static class ClientHandler extends Thread {&#10;        private Socket socket;&#10;        private BufferedReader in;&#10;        private PrintWriter out;&#10;        private Room room;&#10;        private String username;&#10;&#10;        public ClientHandler(Socket socket) {&#10;            this.socket = socket;&#10;        }&#10;&#10;        public void run() {&#10;            try {&#10;                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));&#10;                out = new PrintWriter(socket.getOutputStream(), true);&#10;&#10;                out.println(&amp;quot;Enter your username: &amp;quot;);&#10;                username = in.readLine();&#10;                out.println(&amp;quot;Welcome, &amp;quot; + username + &amp;quot;!&amp;quot;);&#10;&#10;                while (true) {&#10;                    out.println(&amp;quot;Choose an option: \n1. Create a new room \n2. Join an existing room&amp;quot;);&#10;                    String choice = in.readLine();&#10;&#10;                    if (&amp;quot;1&amp;quot;.equals(choice)) {&#10;                        int roomId = createRoom();&#10;                        out.println(&amp;quot;Room created with ID: &amp;quot; + roomId);&#10;                        joinRoom(roomId);&#10;                        break;&#10;                    } else if (&amp;quot;2&amp;quot;.equals(choice)) {&#10;                        out.println(&amp;quot;Enter room ID to join: &amp;quot;);&#10;                        int roomId = Integer.parseInt(in.readLine());&#10;                        if (joinRoom(roomId)) {&#10;                            break;&#10;                        }&#10;                    } else {&#10;                        out.println(&amp;quot;Invalid choice&amp;quot;);&#10;                    }&#10;                }&#10;&#10;                while (true) {&#10;                    String command = in.readLine();&#10;                    if (command == null) break;&#10;                    handleCommand(command);&#10;                }&#10;            } catch (IOException e) {&#10;                e.printStackTrace();&#10;            } finally {&#10;                try {&#10;                    socket.close();&#10;                } catch (IOException e) {&#10;                    e.printStackTrace();&#10;                }&#10;                synchronized (clients) {&#10;                    clients.remove(this);&#10;                }&#10;            }&#10;        }&#10;&#10;        private boolean joinRoom(int roomId) {&#10;            synchronized (rooms) {&#10;                Room room = rooms.get(roomId);&#10;                if (room != null &amp;amp;&amp;amp; room.addPlayer(this)) {&#10;                    this.room = room;&#10;                    room.broadcast(username + &amp;quot; has joined the room.&amp;quot;);&#10;                    return true;&#10;                } else {&#10;                    out.println(&amp;quot;Room does not exist or is full.&amp;quot;);&#10;                    return false;&#10;                }&#10;            }&#10;        }&#10;&#10;        private void handleCommand(String command) {&#10;            if (command.startsWith(&amp;quot;score:&amp;quot;)) {&#10;                int score = Integer.parseInt(command.substring(6).trim());&#10;                room.submitScore(username, score);&#10;            } else if (&amp;quot;start&amp;quot;.equals(command) &amp;amp;&amp;amp; room.isHost(this)) {&#10;                room.startGame();&#10;            }&#10;        }&#10;&#10;        public void sendMessage(String message) {&#10;            out.println(message);&#10;        }&#10;    }&#10;&#10;    private static class Room {&#10;        private int id;&#10;        private List&amp;lt;ClientHandler&amp;gt; players = new ArrayList&amp;lt;&amp;gt;();&#10;        private Map&amp;lt;String, Integer&amp;gt; scores = new HashMap&amp;lt;&amp;gt;();&#10;        private boolean gameStarted = false;&#10;&#10;        public Room(int id) {&#10;            this.id = id;&#10;        }&#10;&#10;        public boolean addPlayer(ClientHandler player) {&#10;            if (!gameStarted &amp;amp;&amp;amp; players.size() &amp;lt; 4) {&#10;                players.add(player);&#10;                return true;&#10;            }&#10;            return false;&#10;        }&#10;&#10;        public void broadcast(String message) {&#10;            for (ClientHandler player : players) {&#10;                player.sendMessage(message);&#10;            }&#10;        }&#10;&#10;        public boolean isHost(ClientHandler player) {&#10;            return players.size() &amp;gt; 0 &amp;amp;&amp;amp; players.get(0) == player;&#10;        }&#10;&#10;        public void startGame() {&#10;            if (players.size() &amp;gt;= 2) {&#10;                gameStarted = true;&#10;                broadcast(&amp;quot;Game has started!&amp;quot;);&#10;                for (ClientHandler player : players) {&#10;                    player.sendMessage(&amp;quot;You can now submit your score. Use 'score:&amp;lt;your_score&amp;gt;' format.&amp;quot;);&#10;                }&#10;            }&#10;        }&#10;&#10;        public void submitScore(String username, int score) {&#10;            scores.put(username, score);&#10;            if (scores.size() == players.size()) {&#10;                endGame();&#10;            }&#10;        }&#10;&#10;        private void endGame() {&#10;            broadcast(&amp;quot;Game over!&amp;quot;);&#10;            scores.entrySet().stream()&#10;                    .sorted(Map.Entry.&amp;lt;String, Integer&amp;gt;comparingByValue().reversed())&#10;                    .forEach(entry -&amp;gt; broadcast(entry.getKey() + &amp;quot;: &amp;quot; + entry.getValue()));&#10;        }&#10;    }&#10;}&#10;&#10;DiceGameClient.java:&#10;package com.example.demo;&#10;&#10;import javafx.application.Application;&#10;import javafx.application.Platform;&#10;import javafx.geometry.Insets;&#10;import javafx.geometry.Pos;&#10;import javafx.scene.Scene;&#10;import javafx.scene.control.*;&#10;import javafx.scene.layout.VBox;&#10;import javafx.stage.Stage;&#10;&#10;import java.io.BufferedReader;&#10;import java.io.IOException;&#10;import java.io.InputStreamReader;&#10;import java.io.PrintWriter;&#10;import java.net.Socket;&#10;&#10;public class DiceGameClient extends Application {&#10;    private static final String SERVER_ADDRESS = &amp;quot;localhost&amp;quot;;&#10;    private static final int SERVER_PORT = 12345;&#10;&#10;    private Socket socket;&#10;    private BufferedReader in;&#10;    private PrintWriter out;&#10;&#10;    private TextArea messagesArea;&#10;    private TextField inputField;&#10;    private Button sendButton;&#10;    private Button startGameButton;&#10;    private Button createRoomButton;&#10;&#10;    private String username;&#10;    private int roomId;&#10;&#10;    public static void main(String[] args) {&#10;        launch(args);&#10;    }&#10;&#10;    @Override&#10;    public void start(Stage primaryStage) {&#10;        primaryStage.setTitle(&amp;quot;Dice Game Client&amp;quot;);&#10;&#10;        VBox mainMenu = new VBox(10);&#10;        mainMenu.setAlignment(Pos.CENTER);&#10;        mainMenu.setPadding(new Insets(10));&#10;&#10;        TextField usernameField = new TextField();&#10;        usernameField.setPromptText(&amp;quot;Enter your username&amp;quot;);&#10;&#10;        Button chooseUsernameButton = new Button(&amp;quot;Choose&amp;quot;);&#10;        chooseUsernameButton.setOnAction(e -&amp;gt; {&#10;            username = usernameField.getText();&#10;            if (!username.isEmpty()) {&#10;                new Thread(this::connectToServer).start();&#10;                showMainMenu(primaryStage);&#10;                createRoomButton.setDisable(false);&#10;            }&#10;        });&#10;&#10;        createRoomButton = new Button(&amp;quot;Create Room&amp;quot;);&#10;        createRoomButton.setDisable(true);&#10;        createRoomButton.setOnAction(e -&amp;gt; {&#10;            out.println(&amp;quot;1&amp;quot;);&#10;            System.out.println(&amp;quot;Sent request to create room&amp;quot;);&#10;        });&#10;&#10;        mainMenu.getChildren().addAll(usernameField, chooseUsernameButton, createRoomButton);&#10;&#10;        primaryStage.setScene(new Scene(mainMenu, 300, 200));&#10;        primaryStage.show();&#10;    }&#10;&#10;    private void showMainMenu(Stage primaryStage) {&#10;        VBox mainMenu = new VBox(10);&#10;        mainMenu.setAlignment(Pos.CENTER);&#10;        mainMenu.setPadding(new Insets(10));&#10;&#10;        TextField joinRoomField = new TextField();&#10;        joinRoomField.setPromptText(&amp;quot;Enter room ID&amp;quot;);&#10;&#10;        Button joinRoomButton = new Button(&amp;quot;Join&amp;quot;);&#10;        joinRoomButton.setOnAction(e -&amp;gt; {&#10;            String roomIdStr = joinRoomField.getText();&#10;            if (!roomIdStr.isEmpty()) {&#10;                out.println(&amp;quot;2&amp;quot;);&#10;                out.println(roomIdStr);&#10;                System.out.println(&amp;quot;Sent request to join room with ID: &amp;quot; + roomIdStr);&#10;            }&#10;        });&#10;&#10;        mainMenu.getChildren().addAll(createRoomButton, joinRoomField, joinRoomButton);&#10;&#10;        primaryStage.setScene(new Scene(mainMenu, 300, 200));&#10;        primaryStage.show();&#10;    }&#10;&#10;    private void showGameUI(Stage primaryStage) {&#10;        VBox gameUI = new VBox(10);&#10;        gameUI.setAlignment(Pos.CENTER);&#10;        gameUI.setPadding(new Insets(10));&#10;&#10;        Label roomIdLabel = new Label(&amp;quot;Room ID: &amp;quot; + roomId);&#10;&#10;        messagesArea = new TextArea();&#10;        messagesArea.setEditable(false);&#10;&#10;        inputField = new TextField();&#10;        inputField.setPromptText(&amp;quot;Enter your score&amp;quot;);&#10;&#10;        sendButton = new Button(&amp;quot;Send&amp;quot;);&#10;        sendButton.setDisable(true);&#10;        sendButton.setOnAction(e -&amp;gt; sendMessage());&#10;&#10;        startGameButton = new Button(&amp;quot;Start Game&amp;quot;);&#10;        startGameButton.setDisable(true);&#10;        startGameButton.setOnAction(e -&amp;gt; out.println(&amp;quot;start&amp;quot;));&#10;&#10;        gameUI.getChildren().addAll(roomIdLabel, messagesArea, inputField, sendButton, startGameButton);&#10;&#10;        primaryStage.setScene(new Scene(gameUI, 400, 300));&#10;        primaryStage.show();&#10;    }&#10;&#10;    private void connectToServer() {&#10;        try {&#10;            socket = new Socket(SERVER_ADDRESS, SERVER_PORT);&#10;            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));&#10;            out = new PrintWriter(socket.getOutputStream(), true);&#10;&#10;            String serverMessage;&#10;            while ((serverMessage = in.readLine()) != null) {&#10;                final String message = serverMessage;&#10;                System.out.println(&amp;quot;Received message: &amp;quot; + message);&#10;                Platform.runLater(() -&amp;gt; handleServerMessage(message));&#10;            }&#10;        } catch (IOException e) {&#10;            e.printStackTrace();&#10;        } finally {&#10;            closeConnection();&#10;        }&#10;    }&#10;&#10;    private void handleServerMessage(String message) {&#10;        if (message.startsWith(&amp;quot;Room created with ID: &amp;quot;)) {&#10;            roomId = Integer.parseInt(message.split(&amp;quot;: &amp;quot;)[1]);&#10;            System.out.println(&amp;quot;Room created with ID: &amp;quot; + roomId);&#10;            Stage primaryStage = (Stage) createRoomButton.getScene().getWindow();&#10;            showGameUI(primaryStage);&#10;        } else if (message.equals(&amp;quot;Welcome, &amp;quot; + username + &amp;quot;!&amp;quot;)) {&#10;            System.out.println(&amp;quot;Welcome message received&amp;quot;);&#10;        } else if (message.equals(&amp;quot;Game has started!&amp;quot;)) {&#10;            startGameButton.setDisable(true);&#10;            sendButton.setDisable(false);&#10;        } else {&#10;            if (messagesArea != null) {&#10;                messagesArea.appendText(message + &amp;quot;\n&amp;quot;);&#10;            }&#10;        }&#10;    }&#10;&#10;    private void sendMessage() {&#10;        String message = inputField.getText();&#10;        if (message != null &amp;amp;&amp;amp; !message.trim().isEmpty()) {&#10;            out.println(&amp;quot;score:&amp;quot; + message);&#10;            inputField.clear();&#10;        }&#10;    }&#10;&#10;    private void closeConnection() {&#10;        try {&#10;            if (socket != null) {&#10;                socket.close();&#10;            }&#10;        } catch (IOException e) {&#10;            e.printStackTrace();&#10;        }&#10;    }&#10;}&#10;" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="Dzięki za udostępnienie pełnego kodu. Po przeanalizowaniu go, widzę kilka potencjalnych problemów z przyciskiem &quot;Create Room&quot;:&#10;&#10;1. **Brak obsługi odpowiedzi serwera po utworzeniu pokoju**: W metodzie `handleServerMessage` w klasie `DiceGameClient` brakuje obsługi odpowiedzi serwera po utworzeniu nowego pokoju. Serwer wysyła komunikat &quot;New room created with ID: X&quot;, ale klient nie obsługuje tego komunikatu.&#10;&#10;2. **Nieprawidłowa obsługa przycisku &quot;Create Room&quot;**: W metodzie `start` w klasie `DiceGameClient`, obsługa zdarzenia przycisku `createRoomButton` polega tylko na wysłaniu komunikatu &quot;1&quot; do serwera. Serwer interpretuje to jako żądanie utworzenia nowego pokoju, ale klient nie otrzymuje żadnej informacji zwrotnej o utworzeniu pokoju.&#10;&#10;Aby rozwiązać te problemy, możesz wprowadzić następujące zmiany:&#10;&#10;1. W klasie `DiceGameClient`, w metodzie `handleServerMessage`, dodaj obsługę komunikatu &quot;New room created with ID: X&quot;:&#10;&#10;```java&#10;} else if (message.startsWith(&quot;New room created with ID: &quot;)) {&#10;    roomId = Integer.parseInt(message.split(&quot;: &quot;)[1]);&#10;    System.out.println(&quot;Room created with ID: &quot; + roomId);&#10;    Stage primaryStage = (Stage) createRoomButton.getScene().getWindow();&#10;    showGameUI(primaryStage);&#10;}&#10;```&#10;&#10;2. W klasie `DiceGameClient`, w metodzie `start`, zmień obsługę zdarzenia przycisku `createRoomButton`:&#10;&#10;```java&#10;createRoomButton.setOnAction(e -&gt; {&#10;    out.println(&quot;1&quot;);&#10;    System.out.println(&quot;Sent request to create room&quot;);&#10;    // Dodaj kod, który będzie czekał na odpowiedź serwera&#10;    // np. za pomocą zmiennej flagowej lub metody blokującej&#10;});&#10;```&#10;&#10;Możesz również rozważyć refaktoryzację kodu, aby uprościć komunikację między klientem a serwerem. Na przykład, zamiast używać komunikatów tekstowych (&quot;1&quot;, &quot;2&quot;), możesz zdefiniować stałe lub wyliczenia reprezentujące różne typy żądań.&#10;&#10;Po wprowadzeniu tych zmian, przycisk &quot;Create Room&quot; powinien działać prawidłowo, a klient powinien otrzymywać informację o utworzeniu nowego pokoju i przechodzić do interfejsu gry." />
+                    </message>
+                  </list>
+                </messages>
+                <updatedAt value="2024-05-24T20:04:09.1996057" />
+              </chat>
+              <chat>
+                <internalId value="5542e9b6-e7af-4341-a6c7-984d9ff23835" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="e5ca2133-f2ec-4f35-b289-a496f515836d" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="9f98d398-fcae-4232-82ee-e8190e9b4af8" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="3a3658be-8627-47ca-9bd9-c530827cfcae" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="a1fe0b54-e073-4ec0-8b14-eb3c02eee3d2" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="5abe19a6-5fa6-4cbf-ad26-75e9cca048db" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="c4a30ab1-a177-4ba8-bc34-ff37480f6bcd" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="50b7391e-a73a-4072-a042-9aa44f4e15a0" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="d6e2ac5e-0317-41f0-b658-33cdbe7f1a42" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="d26c350f-2141-4095-ae0c-bc7192acd7cf" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="12ef3764-b310-447e-a3b1-9ac0165df2f5" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="91ce8904-97c7-496d-891f-4e18bb9ba953" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="902a4e42-c295-4a5b-969d-03eadb49e5f8" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="564568ba-d233-4e3d-bcfb-488b59bad21b" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="82dcdbb8-56de-4c6d-9a67-b5462af13bca" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="d345d01c-9713-4c0c-9c28-f8c605f57464" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="c1cf246a-e5b8-4810-972d-f4f265ad64c5" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="d4dde622-2a7f-40e6-bfeb-6a59f05b9ddc" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="d0a1d31b-4b17-40af-8d8c-3b28f4d6ebf5" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="dbda4ca2-c7e4-44a3-aeb8-b59630d7adda" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-sonnet-20240229" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3 Sonnet" />
+                  </llm>
+                </llm>
+              </chat>
+            </list>
+          </chats>
+          <defaultLlm>
+            <llm>
+              <model value="anthropic/claude-3-sonnet-20240229" />
+              <provider value="Anthropic" />
+              <title value="Claude 3 Sonnet" />
+            </llm>
+          </defaultLlm>
+        </AccountData>
+      </list>
+    </accountData>
+  </component>
+</project>
