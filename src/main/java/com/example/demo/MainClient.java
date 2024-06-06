@@ -624,6 +624,12 @@ public class MainClient extends Application {
             alert.setTitle("Game Over");
             alert.setHeaderText(null);
             alert.setContentText(winnerMessage);
+            
+            alert.setOnHidden(event -> {
+                Platform.exit();
+                System.exit(0);
+            });
+
             alert.showAndWait();
 
         } else {
@@ -638,6 +644,12 @@ public class MainClient extends Application {
             alert.setTitle("Game Over");
             alert.setHeaderText(null);
             alert.setContentText(winnerMessage);
+
+            alert.setOnHidden(event -> {
+                Platform.exit();
+                System.exit(0);
+            });
+
             alert.showAndWait();
 
         }
