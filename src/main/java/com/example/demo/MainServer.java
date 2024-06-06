@@ -120,7 +120,8 @@ public class MainServer {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                System.out.println("Client " + name + " left");
+                //e.printStackTrace();
             } finally {
                 try {
                     socket.close();
