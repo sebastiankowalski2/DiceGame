@@ -1,5 +1,8 @@
 package com.example.demo;
 
+import javafx.animation.TranslateTransition;
+import javafx.util.Duration;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.*;
@@ -64,6 +67,12 @@ public class MainClient extends Application {
         this.primaryStage = primaryStage;
         executorService = Executors.newCachedThreadPool();
         primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/logi.png")));
+
+        primaryStage.setOnCloseRequest(event -> {
+            Platform.exit();
+            System.exit(0);
+        });
+
         // Load dice images
         diceImages = new Image[6];
         for (int i = 0; i < 6; i++) {
@@ -191,6 +200,8 @@ public class MainClient extends Application {
         });
     }
 
+    private ImageView shakeImageView;
+
     private void showGameScene() {
         MainClient client = this;
         Platform.runLater(() -> {
@@ -201,11 +212,13 @@ public class MainClient extends Application {
             gameRoot.setStyle("-fx-background-color: #794108;");
             Scene gameScene = new Scene(gameRoot, 600, 780);
 
-            Text nothingText = new Text("");
-            Text nothingText2 = new Text("");
+//            Text nothingText = new Text("");
+//            Text nothingText2 = new Text("");
             rollResultLabel = new Label("Roll result: ");
             player1ScoreLabel = new Label(playerNumber == 1 ? "You - " + playerName : "Opponent - " + opponentName);
             player2ScoreLabel = new Label(playerNumber == 2 ? "You - " + playerName : "Opponent - " + opponentName);
+
+            //
 
             gameStatusLabel = new Label();
             rollButton = new Button("Roll Dice");
@@ -262,6 +275,9 @@ public class MainClient extends Application {
                 out.println(rollCommand.toString());
                 hasRolledDice = true;
                 resetDiceSelections(); // Reset dice selections after rolling
+
+                // Trigger shake animation
+                triggerShakeAnimation();
             });
 
             scoreTable = new TableView<>();
@@ -300,12 +316,32 @@ public class MainClient extends Application {
 
                 scoreTable.getColumns().addAll(categoryColumn, player1Column, player2Column, assignButtonColumn);
                 populateScoreTable();
-            } //zaktualizowany kawalek kodu ktory ma zostac w tej postaci
-            gameRoot.getChildren().addAll(player1ScoreLabel, player2ScoreLabel, nothingText2, nothingText, rollResultLabel, diceBox, rollButton, gameStatusLabel, scoreTable);
+            }
+
+            shakeImageView = new ImageView(new Image(getClass().getResourceAsStream("/dice.png")));
+            shakeImageView.setFitWidth(50);
+            shakeImageView.setFitHeight(50);
+            shakeImageView.getStyleClass().add("shake-image");
+            shakeImageView.setLayoutX(0);
+            shakeImageView.setLayoutY(0);
+            gameRoot.getChildren().addAll(player1ScoreLabel, player2ScoreLabel, rollResultLabel, diceBox, rollButton, gameStatusLabel, scoreTable);
+            gameRoot.getChildren().add(0, shakeImageView);
             primaryStage.setScene(gameScene);
-            primaryStage.setTitle("Dice Game");
+            if(playerNumber == 1){
+                primaryStage.setTitle("Dice Game - Your turn");
+            }
+            else primaryStage.setTitle("Dice Game - Opponent's turn");
         });
     }
+
+    private void triggerShakeAnimation() {
+        TranslateTransition translateTransition = new TranslateTransition(Duration.millis(100), shakeImageView);
+        translateTransition.setByX(10);
+        translateTransition.setCycleCount(6);
+        translateTransition.setAutoReverse(true);
+        translateTransition.play();
+    }
+
 
     private void resetDiceSelections() {
         for (int i = 0; i < diceSelected.length; i++) {
@@ -342,19 +378,23 @@ public class MainClient extends Application {
             showGameScene();
             primaryStage.getIcons().clear();
             primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/dice.png")));
+
             if (message.contains("Your turn")) {
+                primaryStage.setTitle("Dice Game - Your turn");
                 isMyTurn = true;
                 rollCount = 0;
                 hasRolledDice = false;
                 assignButtonClicked = false;
                 enableRollButton(true);
             } else {
+                primaryStage.setTitle("Dice Game - Opponent's turn");
                 isMyTurn = false;
                 enableRollButton(false);
             }
         }
 
         if (message.startsWith("Your turn.")) {
+            primaryStage.setTitle("Dice Game - Your turn");
             isMyTurn = true;
             rollCount = 0;
             hasRolledDice = false;
@@ -362,6 +402,7 @@ public class MainClient extends Application {
             resetDiceValues();
             enableRollButton(true);
         } else if (message.startsWith("Opponent's turn.")) {
+            primaryStage.setTitle("Dice Game - Opponent's turn");
             resetDiceValues();
             isMyTurn = false;
             enableRollButton(false);
@@ -624,7 +665,7 @@ public class MainClient extends Application {
             alert.setTitle("Game Over");
             alert.setHeaderText(null);
             alert.setContentText(winnerMessage);
-            
+
             alert.setOnHidden(event -> {
                 Platform.exit();
                 System.exit(0);
@@ -729,3 +770,4 @@ class ScoreRow {
         return assignButton;
     }
 }
+
